@@ -8,7 +8,7 @@ import AntarcticGame, { ANTARCTIC_HIGHSCORE_KEY } from './antarctic/AntarcticGam
 // three.js가 커서 카트 게임은 들어갈 때 불러온다
 const KartGame = lazy(() => import('./kart/KartGame'));
 const MarbleGame = lazy(() => import('./marble/MarbleGame'));
-// 원작 ROM 데이터가 필요해 숨겨 둔다 (홈 화면에서 비밀 키를 입력하면 보인다)
+// 텐가이도 선택했을 때 게임 코드와 데이터를 불러온다
 const TengaiGame = lazy(() => import('./tengai/TengaiGame'));
 
 export interface GameInfo {
@@ -21,8 +21,6 @@ export interface GameInfo {
   highScoreKey?: string;
   /** 점수 대신 다른 기록을 보여 줄 때 (예: 레이스 타임) */
   bestText?: () => string;
-  /** 홈 화면에서 비밀 키를 입력해야 보이는 게임 */
-  hidden?: boolean;
   component: ComponentType;
 }
 
@@ -87,8 +85,7 @@ export const GAMES: GameInfo[] = [
     description: '원작 ROM으로 돌리는 횡스크롤 슈팅 이식판. 데이터 파일이 있어야 플레이할 수 있습니다.',
     icon: '⛩️',
     accent: '#e0b25a',
-    bestText: () => '비밀 메뉴',
-    hidden: true,
+    bestText: () => '플레이',
     component: TengaiGame,
   },
 ];

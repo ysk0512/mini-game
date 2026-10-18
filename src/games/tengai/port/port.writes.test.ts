@@ -44,7 +44,9 @@ describe.skipIf(!enabled)('쓰기 기록', () => {
       { prog: bin('prog.bin'), sprites: bin('sprites.bin'), spriteLut: spriteLutFrom(bin('spritelut.bin')), layers: bin('layers.bin') },
       { FUNCTIONS: cf.FUNCTIONS, PARAMS: cf.PARAMS, PCODE_FUNCTIONS: pcodeFunctions },
     );
+    runner.boot();
     runner.loadDump(new Uint8Array(readFileSync(DUMP)));
+    trace.length = 0;
     // 다음 처리 경계 덤프(TENGAI_WL_NEXT)가 있으면 그 처리의 공회전 값과 추가 인터럽트 수를 쓴다
     let extra = 0;
     const next = process.env.TENGAI_WL_NEXT;
@@ -80,8 +82,11 @@ describe.skipIf(!enabled)('쓰기 기록', () => {
     // w32는 내부에서 w16을 두 번 부르므로 8·16비트 쓰기만 기록한다
     m.w8 = (a, v) => (log(a, v, 1), w8(a, v));
     m.w16 = (a, v) => (log(a, v, 2), w16(a, v));
-    runner.step(extra);
-    writeFileSync(OUT, lines.join('\n') + '\n');
-    if (traceAddress) writeFileSync(`${OUT}.trace.json`, JSON.stringify(trace, null, 2));
+    try {
+      runner.step(extra);
+    } finally {
+      writeFileSync(OUT, lines.join('\n') + '\n');
+      if (traceAddress) writeFileSync(`${OUT}.trace.json`, JSON.stringify(trace, null, 2));
+    }
   }, 600_000);
 });

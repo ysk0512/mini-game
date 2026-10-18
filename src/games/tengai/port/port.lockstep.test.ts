@@ -18,6 +18,10 @@ const DIR = process.env.TENGAI_LOCK_DIR ?? '';
 const MAX = Number(process.env.TENGAI_LOCK_FRAMES ?? 100000);
 /** 이 프레임 카운터의 MAME 상태에서 시작한다 (0이면 부팅부터) */
 const START = Number(process.env.TENGAI_LOCK_START ?? 0);
+// Optional producer/consumer mode: require a specific final step and wait for
+// atomically published dump files. Defaults still fail immediately on holes.
+const REQUESTED_END = process.env.TENGAI_LOCK_END === undefined ? undefined : Number(process.env.TENGAI_LOCK_END);
+const WAIT_MS = Number(process.env.TENGAI_LOCK_WAIT_MS ?? 0);
 const enabled = DIR !== '';
 /** Optional evidence output: JSON summary and selected step screenshots. */
 const OUT = process.env.TENGAI_LOCK_OUT ?? '';
@@ -46,6 +50,8 @@ describe.skipIf(!enabled)('MAME 대조', () => {
     expect(existsSync(DIR), 'requested dump directory does not exist').toBe(true);
     expect(Number.isInteger(START) && START >= 0, 'invalid start step').toBe(true);
     expect(Number.isInteger(MAX) && MAX > 0, 'invalid step limit').toBe(true);
+    expect(Number.isInteger(WAIT_MS) && WAIT_MS >= 0 && WAIT_MS <= 300_000, 'invalid dump wait limit').toBe(true);
+    if (REQUESTED_END !== undefined) expect(Number.isInteger(REQUESTED_END) && REQUESTED_END > START, 'invalid requested final step').toBe(true);
     const { TengaiRunner } = await import('./machine');
     const cf = await import('./generated/cfuncs');
     const pc = await import('./generated/pcode');
@@ -61,7 +67,7 @@ describe.skipIf(!enabled)('MAME 대조', () => {
     };
     const load = (k: number) => checked(k, new Uint8Array(readFileSync(path(k))));
     const numbers = readdirSync(DIR).filter((n) => /^d\d{6}\.bin$/.test(n)).map((n) => Number(n.slice(1, 7)));
-    const end = Math.min(START + MAX, numbers.reduce((a, b) => Math.max(a, b), -1));
+    const end = Math.min(START + MAX, REQUESTED_END ?? numbers.reduce((a, b) => Math.max(a, b), -1));
     expect(end, 'no subsequent dump steps were found').toBeGreaterThan(START);
     const manifestPath = join(DIR, 'capture.json');
     const capture = existsSync(manifestPath) ? JSON.parse(readFileSync(manifestPath, 'utf8')) : undefined;
@@ -73,8 +79,10 @@ describe.skipIf(!enabled)('MAME 대조', () => {
     if (OUT) mkdirSync(OUT, { recursive: true });
 
     const m = runner.m;
+    // Dumps contain RAM/video, not CPU registers or MCU state. Preserve the
+    // boot-established ABI state (notably D5.w=0xffff) before restoring memory.
+    runner.boot();
     if (START > 0) runner.loadDump(load(START));
-    else runner.boot();
     const report: string[] = [];
     let resyncs = 0;
     let compared = 0;
@@ -83,11 +91,22 @@ describe.skipIf(!enabled)('MAME 대조', () => {
     const resyncedSteps: number[] = [];
     const evidence = (status: 'running' | 'passed' | 'failed', differences: string[] = []) => {
       if (OUT) writeFileSync(join(OUT, 'lockstep.json'), JSON.stringify({
-        status, directory: DIR, capture, start: START, end: last, compared, resyncedSteps,
+        status, directory: DIR, capture, start: START, end: last, targetEnd: end, compared, resyncedSteps,
         ignoredRamOffsets: IGNORE, differences, timings,
       }, null, 2));
     };
     evidence('running');
+    const readDump = async (step: number) => {
+      const deadline = Date.now() + WAIT_MS;
+      for (;;) {
+        try {
+          return checked(step, new Uint8Array(await readFile(path(step))));
+        } catch (error) {
+          if ((error as NodeJS.ErrnoException).code !== 'ENOENT' || Date.now() >= deadline) throw error;
+          await new Promise((resolve) => setTimeout(resolve, 100));
+        }
+      }
+    };
     // Windows file-open latency dominates captures containing thousands of small
     // dumps. Read a bounded batch concurrently; execute/compare steps in order.
     const batchSize = 64;
@@ -96,8 +115,12 @@ describe.skipIf(!enabled)('MAME 대조', () => {
       const batchIndex = (k - START - 1) % batchSize;
       if (batchIndex === 0) {
         const readStart = performance.now();
-        batch = await Promise.all(Array.from({ length: Math.min(batchSize, end - k + 1) }, async (_, i) =>
-          checked(k + i, new Uint8Array(await readFile(path(k + i))))));
+        try {
+          batch = await Promise.all(Array.from({ length: Math.min(batchSize, end - k + 1) }, (_, i) => readDump(k + i)));
+        } catch (error) {
+          evidence('failed', [error instanceof Error ? error.message : String(error)]);
+          throw error;
+        }
         timings.readMs += performance.now() - readStart;
       }
       const after = batch[batchIndex];
@@ -169,7 +192,7 @@ describe.skipIf(!enabled)('MAME 대조', () => {
       }
       if (c % 100 === 0) {
         report.push(`logic ${c}: ok (resynced ${resyncs} lag frames so far)`);
-        evidence('running');
+        if (c % 1000 === 0) evidence('running');
       }
     }
     console.log(report.join('\n'));

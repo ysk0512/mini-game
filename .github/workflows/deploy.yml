@@ -24,8 +24,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      # zz_*.test.ts는 로컬 덤프로만 도는 임시 실험이라 CI에서는 뺀다
-      - run: npx vitest run --exclude "**/zz_*.test.ts" --exclude "**/node_modules/**"
+      - run: npm test
       - run: npm run build
       # 원작 ROM 데이터는 저장소에 없으므로 배포본에도 들어가지 않는다. 혹시 섞였으면 중단
       - run: test ! -e dist/tengai-assets

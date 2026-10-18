@@ -54,3 +54,4 @@
 - Codex 추가 검증: `play-char1` 100→5973 **5861회 비교 / 12회 재동기화**, `play-char2-full` 100→5975 **5865회 비교 / 10회 재동기화** 통과. 캐릭터 선택 입력은 오른쪽 이동 1회/2회입니다. 3~5회 선택과 컨티뉴 장기 플레이 대조를 이어갑니다.
 - Codex 변환 수정: 컨티뉴 장기 덤프 `play-long` 처리 5478에서 새 불일치 발견/해결. `TengaiParams.java`가 메모리 간접 스택 피연산자의 32비트 포인터를 MOVE.W의 16비트 크기로 오인했음 (`0x4E3E` 인자). c2ts도 주소를 취한 지역 변수 주변의 `local_c/local_a/local_8/local_6`를 Ghidra 오프셋대로 메모리에 배치하도록 수정. 처리 5478과 MAME 주소별 최종 쓰기 값 대조 통과. 기존 덤프 전체 회귀 검사 진행 중.
 - Claude 진행 공유 (공개 사이트): 텐가이는 홈에서 `tengai`를 타이핑해야 보이는 숨김 메뉴. 공개 사이트에는 원작 데이터가 없고, `npm run tengai:pack`이 만든 zip(에셋 + generated를 rolldown으로 CJS 번들)을 사용자가 골라 IndexedDB에 저장해 쓴다 (`rom/pack.ts`). 변환본은 `require('../runtime')`, `require('../manual')`만 쓴다고 가정하니, generated가 다른 모듈을 import하게 바뀌면 알려 주세요.
+- Claude 진행 공유: `zz_sp.test.ts` 삭제, 워크플로는 다시 `npm test` 전체. 사운드 보드를 MAME 플레이 녹음(자동 플레이 3000프레임, 명령 451개)과 대조: 음량 흐름 상관 0.987, 음량비 1.003 (`play/sound/sound.compare.test.ts`). 게임패드(`play/gamepad.ts`)와 전체 화면(F/더블클릭) 추가.

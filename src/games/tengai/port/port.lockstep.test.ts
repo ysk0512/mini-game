@@ -6,6 +6,7 @@
  * 처음 어긋난 프레임의 차이 주소를 보고한다.
  */
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { PNG } from 'pngjs';
 import { describe, expect, it } from 'vitest';
@@ -54,11 +55,11 @@ describe.skipIf(!enabled)('MAME 대조', () => {
 
     // 처리 경계 덤프 dNNNNNN.bin (tools/ramdump.lua): 순번 k = k번째 처리가 끝난 상태
     const path = (k: number) => join(DIR, `d${String(k).padStart(6, '0')}.bin`);
-    const load = (k: number) => {
-      const dump = new Uint8Array(readFileSync(path(k)));
+    const checked = (k: number, dump: Uint8Array) => {
       expect(dump.length, `dump ${k} is truncated`).toBeGreaterThanOrEqual(0x2c006);
       return dump;
     };
+    const load = (k: number) => checked(k, new Uint8Array(readFileSync(path(k))));
     const numbers = readdirSync(DIR).filter((n) => /^d\d{6}\.bin$/.test(n)).map((n) => Number(n.slice(1, 7)));
     const end = Math.min(START + MAX, numbers.reduce((a, b) => Math.max(a, b), -1));
     expect(end, 'no subsequent dump steps were found').toBeGreaterThan(START);
@@ -78,23 +79,44 @@ describe.skipIf(!enabled)('MAME 대조', () => {
     let resyncs = 0;
     let compared = 0;
     let last = START;
+    const timings = { readMs: 0, stepMs: 0, compareMs: 0 };
     const resyncedSteps: number[] = [];
     const evidence = (status: 'running' | 'passed' | 'failed', differences: string[] = []) => {
       if (OUT) writeFileSync(join(OUT, 'lockstep.json'), JSON.stringify({
         status, directory: DIR, capture, start: START, end: last, compared, resyncedSteps,
-        ignoredRamOffsets: IGNORE, differences,
+        ignoredRamOffsets: IGNORE, differences, timings,
       }, null, 2));
     };
     evidence('running');
+    // Windows file-open latency dominates captures containing thousands of small
+    // dumps. Read a bounded batch concurrently; execute/compare steps in order.
+    const batchSize = 64;
+    let batch: Uint8Array[] = [];
     for (let k = START + 1; k <= end; k++) {
-      const after = load(k);
+      const batchIndex = (k - START - 1) % batchSize;
+      if (batchIndex === 0) {
+        const readStart = performance.now();
+        batch = await Promise.all(Array.from({ length: Math.min(batchSize, end - k + 1) }, async (_, i) =>
+          checked(k + i, new Uint8Array(await readFile(path(k + i))))));
+        timings.readMs += performance.now() - readStart;
+      }
+      const after = batch[batchIndex];
       last = k;
       runner.idleSpins = r32(after, 0x2c001);
       // 이 처리를 시작시킨 인터럽트가 읽어 RAM에 남긴 입력 (0xFE95BB P1, 0xFE95BD P2, 0xFE95C3 코인 등)
       m.setInputBytes(after[0x95bb], after[0x95bd], after[0x95c3]);
       for (const poke of pokes) m.w16(poke.address, poke.value);
       const extra = after[0x2c005];
-      runner.step(extra);
+      const stepStart = performance.now();
+      try {
+        runner.step(extra);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        evidence('failed', [message]);
+        throw new Error(`logic ${k} (extra irqs ${extra}): ${message}`, { cause: error });
+      } finally {
+        timings.stepMs += performance.now() - stepStart;
+      }
       const c = k;
       if (extra > 0) {
         // 처리 도중 인터럽트가 들어온 지연 프레임: 인터럽트 시점이 달라 난수 등이 어긋나므로 MAME 상태로 다시 맞춘다
@@ -103,6 +125,7 @@ describe.skipIf(!enabled)('MAME 대조', () => {
         resyncedSteps.push(k);
         continue;
       }
+      const compareStart = performance.now();
       const diffs: string[] = [];
       for (const [lo, hi] of COMPARE_RAM) {
         for (let o = lo; o < hi && diffs.length < 40; o++) {
@@ -128,6 +151,7 @@ describe.skipIf(!enabled)('MAME 대조', () => {
       if (m.video.bankByte !== after[0x2c000]) {
         diffs.push(`bank: ours ${m.video.bankByte.toString(16)} mame ${after[0x2c000].toString(16)}`);
       }
+      timings.compareMs += performance.now() - compareStart;
       if (diffs.length) {
         report.push(`logic ${c} (extra irqs ${extra}):`, ...diffs);
         evidence('failed', diffs);

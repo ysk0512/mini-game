@@ -23,3 +23,5 @@
 .tengai-pick input { display: none; }
 .tengai-pack-error { color: #ff9b9b; }
 .tengai-tabs .tengai-forget { margin-left: auto; background: transparent; color: #8a90a0; }
+.tengai-screen:fullscreen { width: 100vw; height: 100vh; aspect-ratio: auto; border-radius: 0; display: grid; place-items: center; cursor: none; }
+.tengai-screen:fullscreen .tengai-canvas { width: min(100vw, calc(100vh * 320 / 224)); height: auto; aspect-ratio: 320 / 224; }

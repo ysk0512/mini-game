@@ -1,7 +1,7 @@
 // 텐가이 데이터 파일 만들기: 추출한 ROM 에셋 + 원작 프로그램 변환본을 zip 하나로 묶는다.
 //   npm run tengai:pack [-- <출력 경로>]   (기본: tengai-pack.zip)
-// 공개 사이트에는 원작 데이터가 없으므로, 이 파일을 브라우저에서 직접 골라 플레이한다.
-// 원작 저작물이 들어 있으니 커밋하거나 남에게 주지 않는다 (.gitignore).
+// 기본 출력은 직접 선택하는 로컬 팩이다. tengai:pack:site는 자동 실행용 public 팩을 만든다.
+// public 팩은 사이트와 함께 공개되어 방문자가 다운로드할 수 있다.
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { rolldown } from 'rolldown';

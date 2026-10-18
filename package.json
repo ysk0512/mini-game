@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "tengai:extract": "node scripts/tengai/extract.mjs",
-    "tengai:pack": "node scripts/tengai/pack.mjs"
+    "tengai:pack": "node scripts/tengai/pack.mjs",
+    "tengai:pack:site": "node scripts/tengai/pack.mjs public/tengai-pack.zip"
   },
   "dependencies": {
     "@react-three/fiber": "^9.8.2",

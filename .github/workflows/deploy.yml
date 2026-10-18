@@ -26,7 +26,7 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build
-      # 원작 ROM 데이터는 저장소에 없으므로 배포본에도 들어가지 않는다. 혹시 섞였으면 중단
+      # 자동 실행용 팩 ZIP은 배포하되, 개발용 개별 ROM 에셋 폴더는 제외한다
       - run: test ! -e dist/tengai-assets
       - uses: actions/upload-pages-artifact@v3
         with:

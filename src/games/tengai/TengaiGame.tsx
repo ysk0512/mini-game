@@ -2,7 +2,7 @@ import { useEffect, useState, type ChangeEvent } from 'react';
 import { AssetViewer } from './dev/AssetViewer';
 import { TengaiPlayer, type GeneratedPort } from './play/TengaiPlayer';
 import { MissingRomError, loadRom } from './rom/loadRom';
-import { BadPackError, clearStoredPack, readStoredPack, storePack, unpack } from './rom/pack';
+import { BadPackError, clearStoredPack, readHostedPack, readStoredPack, storePack, unpack } from './rom/pack';
 import type { TengaiRom } from './rom/parse';
 import './tengai.css';
 
@@ -23,7 +23,7 @@ async function loadPort(): Promise<GeneratedPort | null> {
   return { FUNCTIONS: cf.FUNCTIONS, PARAMS: cf.PARAMS, PCODE_FUNCTIONS: pc.PCODE_FUNCTIONS };
 }
 
-/** 개발 PC: 추출한 에셋과 변환본을 바로 쓴다. 없으면(공개 사이트) 브라우저에 저장한 데이터 파일을 쓴다 */
+/** 개발 에셋 → 사이트의 최신 팩 → 저장된 팩 → 직접 파일 선택. */
 async function loadLocal(): Promise<LoadState> {
   const port = await loadPort();
   if (port) {
@@ -33,8 +33,19 @@ async function loadLocal(): Promise<LoadState> {
       if (!(err instanceof MissingRomError)) throw err;
     }
   }
+  let downloadError: string | undefined;
+  try {
+    const hosted = await readHostedPack();
+    if (hosted) {
+      const pack = unpack(hosted);
+      await storePack(hosted).catch(() => undefined);
+      return { kind: 'ready', ...pack, fromPack: true };
+    }
+  } catch {
+    downloadError = '자동으로 데이터를 불러오지 못했습니다. 데이터 팩을 직접 선택할 수 있습니다.';
+  }
   const stored = await readStoredPack().catch(() => null);
-  if (!stored) return { kind: 'needPack' };
+  if (!stored) return { kind: 'needPack', error: downloadError };
   try {
     return { kind: 'ready', ...unpack(stored), fromPack: true };
   } catch (err) {
@@ -47,8 +58,8 @@ type Tab = 'play' | 'assets';
 
 /**
  * 텐가이 (Psikyo, 1996). 원작 ROM의 그래픽과, 원작 프로그램을 디컴파일해 TypeScript로 옮긴 게임 로직으로 돈다.
- * 원작 데이터는 저장소와 공개 사이트에 없다. 개발 PC에서는 npm run tengai:extract 결과를,
- * 그 밖에서는 npm run tengai:pack 으로 만든 데이터 파일을 골라 쓴다.
+ * 개발 PC에서는 추출한 에셋을, 배포 사이트에서는 tengai-pack.zip을 자동으로 불러온다.
+ * 자동 다운로드가 불가능하면 저장된 팩이나 직접 선택한 팩을 쓴다.
  */
 export default function TengaiGame() {
   const [state, setState] = useState<LoadState>({ kind: 'loading' });
@@ -92,7 +103,7 @@ export default function TengaiGame() {
       {state.kind === 'loading' && <p className="loading">ROM 데이터와 게임 로직을 불러오는 중…</p>}
       {state.kind === 'needPack' && (
         <div className="tengai-missing">
-          <p>텐가이 데이터 파일이 필요합니다. 원작 데이터는 이 사이트에 들어 있지 않습니다.</p>
+          <p>텐가이 데이터를 자동으로 불러올 수 없습니다. 데이터 팩을 직접 선택해 주세요.</p>
           <label className="tengai-pick">
             데이터 파일 선택 (.zip)
             <input type="file" accept=".zip,application/zip" onChange={onPickPack} />

@@ -6,7 +6,7 @@ import { spriteLutFrom, type TengaiRom } from './parse';
 
 /**
  * 텐가이 데이터 파일 (npm run tengai:pack 이 만드는 zip).
- * 공개 사이트에는 원작 데이터가 없으므로 사용자가 가진 파일을 골라 브라우저(IndexedDB)에만 저장해 쓴다.
+ * 사이트에 배포된 팩 또는 사용자가 선택한 팩을 읽어 브라우저(IndexedDB)에 저장한다.
  */
 export interface TengaiPack {
   rom: TengaiRom;
@@ -14,6 +14,23 @@ export interface TengaiPack {
 }
 
 export class BadPackError extends Error {}
+
+/** GitHub Pages의 저장소 하위 경로에서도 같은 사이트의 팩을 찾는다. */
+export async function readHostedPack(): Promise<Uint8Array | null> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30_000);
+  try {
+    const response = await fetch(`${import.meta.env.BASE_URL}tengai-pack.zip`, {
+      cache: 'no-cache',
+      signal: controller.signal,
+    });
+    if (response.status === 404 || response.status === 410) return null;
+    if (!response.ok) throw new BadPackError(`데이터 다운로드 실패 (${response.status})`);
+    return new Uint8Array(await response.arrayBuffer());
+  } finally {
+    clearTimeout(timeout);
+  }
+}
 
 /** 변환본은 CommonJS로 묶여 있고 runtime/manual을 require 한다 */
 function evalModule(code: string): Record<string, unknown> {

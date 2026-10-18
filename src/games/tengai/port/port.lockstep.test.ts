@@ -5,11 +5,11 @@
  * 게임 프레임 카운터(0xFFFE0004)가 같은 상태끼리 작업 RAM과 하드웨어 영역을 비교하고,
  * 처음 어긋난 프레임의 차이 주소를 보고한다.
  */
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { closeSync, existsSync, mkdirSync, openSync, readSync, readdirSync, readFileSync, renameSync, statSync, writeFileSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { PNG } from 'pngjs';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { spriteLutFrom, type TengaiRom } from '../rom/parse';
 import { SCREEN_H, SCREEN_W } from '../video/psikyoVideo';
 
@@ -22,6 +22,8 @@ const START = Number(process.env.TENGAI_LOCK_START ?? 0);
 // atomically published dump files. Defaults still fail immediately on holes.
 const REQUESTED_END = process.env.TENGAI_LOCK_END === undefined ? undefined : Number(process.env.TENGAI_LOCK_END);
 const WAIT_MS = Number(process.env.TENGAI_LOCK_WAIT_MS ?? 0);
+// Long captures can compete with native capture writes on a mechanical disk.
+const TIMEOUT_MS = Number(process.env.TENGAI_LOCK_TIMEOUT_MS ?? 1_800_000);
 const enabled = DIR !== '';
 /** Optional evidence output: JSON summary and selected step screenshots. */
 const OUT = process.env.TENGAI_LOCK_OUT ?? '';
@@ -46,10 +48,15 @@ if (cursor < RAM) COMPARE_RAM.push([cursor, RAM]);
 const r32 = (b: Uint8Array, o: number) => ((b[o] << 24) | (b[o + 1] << 16) | (b[o + 2] << 8) | b[o + 3]) >>> 0;
 
 describe.skipIf(!enabled)('MAME 대조', () => {
+  let packedFd: number | undefined;
+  afterEach(() => {
+    if (packedFd !== undefined) { closeSync(packedFd); packedFd = undefined; }
+  });
   it('프레임별 메모리 일치', async () => {
     expect(existsSync(DIR), 'requested dump directory does not exist').toBe(true);
     expect(Number.isInteger(START) && START >= 0, 'invalid start step').toBe(true);
     expect(Number.isInteger(MAX) && MAX > 0, 'invalid step limit').toBe(true);
+    expect(Number.isInteger(TIMEOUT_MS) && TIMEOUT_MS >= 60_000 && TIMEOUT_MS <= 3_600_000, 'invalid comparison timeout').toBe(true);
     expect(Number.isInteger(WAIT_MS) && WAIT_MS >= 0 && WAIT_MS <= 300_000, 'invalid dump wait limit').toBe(true);
     if (REQUESTED_END !== undefined) expect(Number.isInteger(REQUESTED_END) && REQUESTED_END > START, 'invalid requested final step').toBe(true);
     const { TengaiRunner } = await import('./machine');
@@ -61,16 +68,36 @@ describe.skipIf(!enabled)('MAME 대조', () => {
 
     // 처리 경계 덤프 dNNNNNN.bin (tools/ramdump.lua): 순번 k = k번째 처리가 끝난 상태
     const path = (k: number) => join(DIR, `d${String(k).padStart(6, '0')}.bin`);
+    const manifestPath = join(DIR, 'capture.json');
+    const capture = existsSync(manifestPath) ? JSON.parse(readFileSync(manifestPath, 'utf8')) : undefined;
+    const packedPath = capture?.storage === 'packed' ? join(DIR, 'frames.bin') : undefined;
+    const recordBytes = 0x2c006;
+    if (packedPath) {
+      expect(capture.format, 'unsupported packed dump format').toBe(2);
+      expect(capture.recordBytes, 'unexpected packed record size').toBe(recordBytes);
+      expect(capture.complete, 'packed captures must be finalized before comparison').toBe(true);
+      expect(Number.isInteger(capture.lastStep) && capture.lastStep >= 0, 'invalid packed final step').toBe(true);
+      expect(statSync(packedPath).size, 'packed capture is truncated or has trailing data').toBe((capture.lastStep + 1) * recordBytes);
+      packedFd = openSync(packedPath, 'r');
+    }
+    const packedRead = (step: number, count = 1) => {
+      const buffer = new Uint8Array(count * recordBytes);
+      let offset = 0;
+      while (offset < buffer.length) {
+        const n = readSync(packedFd!, buffer, offset, buffer.length - offset, step * recordBytes + offset);
+        if (!n) throw new Error(`packed dump ${step} is truncated`);
+        offset += n;
+      }
+      return buffer;
+    };
     const checked = (k: number, dump: Uint8Array) => {
       expect(dump.length, `dump ${k} is truncated`).toBeGreaterThanOrEqual(0x2c006);
       return dump;
     };
-    const load = (k: number) => checked(k, new Uint8Array(readFileSync(path(k))));
-    const numbers = readdirSync(DIR).filter((n) => /^d\d{6}\.bin$/.test(n)).map((n) => Number(n.slice(1, 7)));
+    const load = (k: number) => checked(k, packedPath ? packedRead(k) : new Uint8Array(readFileSync(path(k))));
+    const numbers = packedPath ? [capture.lastStep] : readdirSync(DIR).filter((n) => /^d\d{6}\.bin$/.test(n)).map((n) => Number(n.slice(1, 7)));
     const end = Math.min(START + MAX, REQUESTED_END ?? numbers.reduce((a, b) => Math.max(a, b), -1));
     expect(end, 'no subsequent dump steps were found').toBeGreaterThan(START);
-    const manifestPath = join(DIR, 'capture.json');
-    const capture = existsSync(manifestPath) ? JSON.parse(readFileSync(manifestPath, 'utf8')) : undefined;
     const pokes: { address: number; value: number }[] = capture?.pokes ?? [];
     for (const poke of pokes) {
       expect(Number.isInteger(poke.address) && poke.address >= 0xfe0000 && poke.address < 0xffffff && poke.address % 2 === 0).toBe(true);
@@ -90,10 +117,14 @@ describe.skipIf(!enabled)('MAME 대조', () => {
     const timings = { readMs: 0, stepMs: 0, compareMs: 0 };
     const resyncedSteps: number[] = [];
     const evidence = (status: 'running' | 'passed' | 'failed', differences: string[] = []) => {
-      if (OUT) writeFileSync(join(OUT, 'lockstep.json'), JSON.stringify({
-        status, directory: DIR, capture, start: START, end: last, targetEnd: end, compared, resyncedSteps,
-        ignoredRamOffsets: IGNORE, differences, timings,
-      }, null, 2));
+      if (OUT) {
+        const temporary = join(OUT, 'lockstep.json.tmp');
+        writeFileSync(temporary, JSON.stringify({
+          status, directory: DIR, capture, start: START, end: last, targetEnd: end, compared, resyncedSteps,
+          ignoredRamOffsets: IGNORE, differences, timings,
+        }, null, 2));
+        renameSync(temporary, join(OUT, 'lockstep.json'));
+      }
     };
     evidence('running');
     const readDump = async (step: number) => {
@@ -116,7 +147,11 @@ describe.skipIf(!enabled)('MAME 대조', () => {
       if (batchIndex === 0) {
         const readStart = performance.now();
         try {
-          batch = await Promise.all(Array.from({ length: Math.min(batchSize, end - k + 1) }, (_, i) => readDump(k + i)));
+          const count = Math.min(batchSize, end - k + 1);
+          if (packedPath) {
+            const bytes = packedRead(k, count);
+            batch = Array.from({ length: count }, (_, i) => bytes.subarray(i * recordBytes, (i + 1) * recordBytes));
+          } else batch = await Promise.all(Array.from({ length: count }, (_, i) => readDump(k + i)));
         } catch (error) {
           evidence('failed', [error instanceof Error ? error.message : String(error)]);
           throw error;
@@ -199,5 +234,5 @@ describe.skipIf(!enabled)('MAME 대조', () => {
     console.log(`Compared ${compared} steps through ${last}; resynchronized ${resyncs} lag steps (not compared).`);
     expect(compared, 'no comparable dump steps were found').toBeGreaterThan(0);
     evidence('passed');
-  }, 600_000);
+  }, TIMEOUT_MS);
 });

@@ -6,19 +6,23 @@
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { describe, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { spriteLutFrom } from '../rom/parse';
 
 const ASSETS = join(process.cwd(), 'public', 'tengai-assets');
 const DUMP = process.env.TENGAI_WL_DUMP ?? '';
 const OUT = process.env.TENGAI_WL_OUT ?? '';
-const enabled = DUMP !== '' && OUT !== '' && existsSync(DUMP);
+const enabled = DUMP !== '' || OUT !== '';
 
 /** 스택 줄에서 변환 함수 이름(f_xxxx, p_xxxx)을 찾는다 */
 const FN_NAME = new RegExp('\\b([fp]_[0-9a-f]+) \\(');
 
 describe.skipIf(!enabled)('쓰기 기록', () => {
   it('한 프레임', async () => {
+    expect(DUMP !== '' && OUT !== '', 'both TENGAI_WL_DUMP and TENGAI_WL_OUT are required').toBe(true);
+    expect(existsSync(DUMP), 'requested write-trace dump does not exist').toBe(true);
+    const dump = new Uint8Array(readFileSync(DUMP));
+    expect(dump.length, 'write-trace dump is truncated').toBeGreaterThanOrEqual(0x2c006);
     const { TengaiRunner } = await import('./machine');
     const cf = await import('./generated/cfuncs');
     const pc = await import('./generated/pcode');
@@ -45,13 +49,14 @@ describe.skipIf(!enabled)('쓰기 기록', () => {
       { FUNCTIONS: cf.FUNCTIONS, PARAMS: cf.PARAMS, PCODE_FUNCTIONS: pcodeFunctions },
     );
     runner.boot();
-    runner.loadDump(new Uint8Array(readFileSync(DUMP)));
+    runner.loadDump(dump);
     trace.length = 0;
     // 다음 처리 경계 덤프(TENGAI_WL_NEXT)가 있으면 그 처리의 공회전 값과 추가 인터럽트 수를 쓴다
     let extra = 0;
     const next = process.env.TENGAI_WL_NEXT;
     if (next) {
       const n = new Uint8Array(readFileSync(next));
+      expect(n.length, 'next write-trace dump is truncated').toBeGreaterThanOrEqual(0x2c006);
       runner.idleSpins = ((n[0x2c001] << 24) | (n[0x2c002] << 16) | (n[0x2c003] << 8) | n[0x2c004]) >>> 0;
       extra = n[0x2c005];
       runner.m.setInputBytes(n[0x95bb], n[0x95bd], n[0x95c3]);
@@ -59,7 +64,11 @@ describe.skipIf(!enabled)('쓰기 기록', () => {
     const manifestPath = join(dirname(DUMP), 'capture.json');
     if (existsSync(manifestPath)) {
       const capture = JSON.parse(readFileSync(manifestPath, 'utf8'));
-      for (const poke of capture.pokes ?? []) runner.m.w16(poke.address, poke.value);
+      for (const poke of capture.pokes ?? []) {
+        expect(Number.isInteger(poke.address) && poke.address >= 0xfe0000 && poke.address < 0xffffff && poke.address % 2 === 0, 'invalid fixture address').toBe(true);
+        expect(Number.isInteger(poke.value) && poke.value >= 0 && poke.value <= 0xffff, 'invalid fixture value').toBe(true);
+        runner.m.w16(poke.address, poke.value);
+      }
     }
 
     const m = runner.m;

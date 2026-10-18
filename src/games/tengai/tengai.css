@@ -23,5 +23,54 @@
 .tengai-pick input { display: none; }
 .tengai-pack-error { color: #ff9b9b; }
 .tengai-tabs .tengai-forget { margin-left: auto; background: transparent; color: #8a90a0; }
-.tengai-screen:fullscreen { width: 100vw; height: 100vh; aspect-ratio: auto; border-radius: 0; display: grid; place-items: center; cursor: none; }
-.tengai-screen:fullscreen .tengai-canvas { width: min(100vw, calc(100vh * 320 / 224)); height: auto; aspect-ratio: 320 / 224; }
+/* Keep touch controls inside the fullscreen element. */
+.tengai-stage { width: min(960px, 100%); display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.tengai-player-toolbar { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px; }
+.tengai-player-toolbar > button { min-height: 40px; padding: 6px 12px; border: 1px solid #4a4a48; border-radius: 7px; background: #222630; color: #eee1c4; cursor: pointer; }
+.tengai-player button:focus-visible { outline: 3px solid #ffe2a2; outline-offset: 3px; }
+.tengai-touch-controls { display: none; width: 100%; max-width: 460px; justify-content: space-between; align-items: center; gap: 16px; padding: 8px 4px; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.tengai-touch-pad { flex: 0 0 144px; width: 144px; height: 144px; display: grid; grid-template: repeat(3, 1fr) / repeat(3, 1fr); touch-action: none; border-radius: 50%; background: #151a24; }
+.tengai-touch-button { min-width: 44px; min-height: 44px; padding: 0; border: 1px solid #62583f; border-radius: 10px; color: #eedbb0; background: #2d3036; font: inherit; font-weight: 700; touch-action: none; cursor: pointer; }
+.tengai-touch-button[aria-pressed='true'] { background: #e0b25a; color: #171717; box-shadow: 0 0 16px #e0b25a55; }
+.tengai-touch-button:disabled { opacity: .45; cursor: default; }
+.tengai-touch-up { grid-area: 1 / 2; }
+.tengai-touch-left { grid-area: 2 / 1; }
+.tengai-touch-center { grid-area: 2 / 2; display: grid; place-items: center; color: #70664f; pointer-events: none; }
+.tengai-touch-right { grid-area: 2 / 3; }
+.tengai-touch-down { grid-area: 3 / 2; }
+.tengai-touch-actions { display: flex; flex-direction: column; gap: 8px; flex: 0 1 170px; }
+.tengai-touch-start-row, .tengai-touch-fire-row { display: flex; gap: 10px; }
+.tengai-touch-start-row button { flex: 1; font-size: 13px; }
+.tengai-touch-fire-row { align-items: center; justify-content: flex-end; }
+.tengai-touch-b2 { width: 58px; height: 58px; border-radius: 50%; }
+.tengai-touch-b1 { width: 76px; height: 76px; border-radius: 50%; background: #614323; border-color: #c18d42; font-size: 18px; }
+.tengai-touch-actions small { color: #a5a3a0; text-align: right; font-size: 10px; }
+.tengai-tabs { flex-wrap: wrap; }
+.tengai-stage:is(:fullscreen, .tengai-expanded) { width: 100%; height: 100%; background: #090c12; padding: max(8px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left)); overflow: auto; }
+.tengai-stage:is(:fullscreen, .tengai-expanded) .tengai-screen { flex: 1; width: 100%; min-height: 0; aspect-ratio: auto; border-radius: 0; }
+.tengai-stage:is(:fullscreen, .tengai-expanded) .tengai-canvas { width: 100%; height: 100%; object-fit: contain; }
+.tengai-stage.tengai-expanded { position: fixed; inset: 0; z-index: 1000; width: 100vw; height: 100dvh; }
+@media (pointer: coarse), (max-width: 760px) {
+  .tengai-touch-controls { display: flex; }
+  .tengai-keyboard-note { display: none; }
+  .tengai-page h1 { margin: 8px 0 12px; }
+  .tengai-tabs button { padding: 6px 10px; }
+  .tengai-stage { gap: 6px; }
+}
+@media (max-width: 350px) {
+  .tengai-touch-pad { flex-basis: 132px; width: 132px; height: 132px; }
+  .tengai-touch-controls { gap: 8px; padding-inline: 0; }
+  .tengai-touch-actions { flex-basis: 136px; }
+  .tengai-touch-b1 { width: 66px; height: 66px; }
+  .tengai-touch-b2 { width: 54px; height: 54px; }
+}
+@media (orientation: landscape) and (pointer: coarse) {
+  .tengai-stage:is(:fullscreen, .tengai-expanded) { display: grid; grid-template: 1fr auto / minmax(0, 1fr) 290px; gap: 4px 12px; }
+  .tengai-stage:is(:fullscreen, .tengai-expanded) .tengai-screen { grid-row: 1 / 3; height: 100%; }
+  .tengai-stage:is(:fullscreen, .tengai-expanded) .tengai-touch-controls { grid-column: 2; align-self: center; gap: 8px; }
+  .tengai-stage:is(:fullscreen, .tengai-expanded) .tengai-player-toolbar { grid-column: 2; grid-row: 2; }
+  .tengai-stage:is(:fullscreen, .tengai-expanded) .tengai-touch-pad { flex-basis: 132px; width: 132px; height: 132px; }
+  .tengai-stage:is(:fullscreen, .tengai-expanded) .tengai-touch-actions { flex-basis: 140px; }
+  .tengai-stage:is(:fullscreen, .tengai-expanded) .tengai-touch-b1 { width: 66px; height: 66px; }
+  .tengai-stage:is(:fullscreen, .tengai-expanded) .tengai-touch-b2 { width: 54px; height: 54px; }
+}

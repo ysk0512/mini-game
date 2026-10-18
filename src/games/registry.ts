@@ -10,6 +10,7 @@ const KartGame = lazy(() => import('./kart/KartGame'));
 const MarbleGame = lazy(() => import('./marble/MarbleGame'));
 // 텐가이도 선택했을 때 게임 코드와 데이터를 불러온다
 const TengaiGame = lazy(() => import('./tengai/TengaiGame'));
+const PinballGame = lazy(() => import('./pinball/PinballGame'));
 
 export interface GameInfo {
   id: string;
@@ -25,6 +26,15 @@ export interface GameInfo {
 }
 
 export const GAMES: GameInfo[] = [
+  {
+    id: 'pinball',
+    title: '오빗 핀볼',
+    description: '은빛 공을 쏘아 올리는 3D 핀볼. 플리퍼로 공을 지키고 우주 범퍼와 다섯 별 보너스에 도전하세요.',
+    icon: '🪐',
+    accent: '#e7a46c',
+    highScoreKey: 'orbit-pinball-highscore',
+    component: PinballGame,
+  },
   {
     id: 'marble',
     title: '구슬 미로',

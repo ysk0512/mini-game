@@ -8,6 +8,8 @@ import { addGamepadInput } from './gamepad';
 import { frameInput, listenKeyboard, type KeyboardState } from './keyboard';
 import { AudioOut } from './sound/audioOut';
 import { SoundBoard } from './sound/soundBoard';
+import { TouchControls } from './TouchControls';
+import { TouchInput } from './touch';
 
 export interface GeneratedPort {
   FUNCTIONS: Record<number, (...a: number[]) => number | void>;
@@ -27,19 +29,44 @@ interface Props {
   port: GeneratedPort;
 }
 
-function toggleFullscreen(el: HTMLElement | null) {
-  if (document.fullscreenElement) void document.exitFullscreen();
-  else void el?.requestFullscreen?.().catch(() => undefined);
+function toggleFullscreen(el: HTMLElement | null, fallback: () => void) {
+  if (document.fullscreenElement) void document.exitFullscreen().catch(() => undefined);
+  else if (el?.requestFullscreen) void el.requestFullscreen().catch(fallback);
+  else fallback();
 }
 
 /** 원작 로직 이식본을 60fps로 돌려 캔버스에 그린다 */
 export function TengaiPlayer({ rom, port }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const screenRef = useRef<HTMLDivElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const touchRef = useRef(new TouchInput());
+  const keysRef = useRef<KeyboardState | null>(null);
   const [paused, setPaused] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const pausedRef = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const [fps, setFps] = useState(0);
+
+  const toggleScreen = () => toggleFullscreen(stageRef.current, () => setExpanded(value => !value));
+
+  useEffect(() => {
+    if (!expanded) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = previous; };
+  }, [expanded]);
+
+  const changePaused = (next: boolean) => {
+    touchRef.current.clear();
+    const keys = keysRef.current;
+    if (keys) {
+      keys.player = emptyInput();
+      keys.coin = false;
+      keys.pulse.clear();
+    }
+    pausedRef.current = next;
+    setPaused(next);
+  };
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -60,10 +87,8 @@ export function TengaiPlayer({ rom, port }: Props) {
     }
 
     const keys: KeyboardState = { player: emptyInput(), coin: false, pulse: new Map() };
-    const stop = listenKeyboard(keys, () => {
-      pausedRef.current = !pausedRef.current;
-      setPaused(pausedRef.current);
-    });
+    keysRef.current = keys;
+    const stop = listenKeyboard(keys, () => changePaused(!pausedRef.current));
 
     // 사운드: 원작 사운드 보드(Z80 + YMF278B)를 같이 돌린다. 브라우저 정책상 첫 입력 때 소리를 켠다
     const board = rom.soundCpu && rom.samples ? new SoundBoard(rom.soundCpu, rom.samples) : null;
@@ -74,7 +99,8 @@ export function TengaiPlayer({ rom, port }: Props) {
     const onKeyM = (e: KeyboardEvent) => {
       if (e.repeat) return;
       if (e.code === 'KeyM') toggleMuted();
-      if (e.code === 'KeyF') toggleFullscreen(screenRef.current);
+      if (e.code === 'KeyF') toggleScreen();
+      if (e.code === 'Escape') setExpanded(false);
     };
     window.addEventListener('keydown', unlock);
     window.addEventListener('pointerdown', unlock);
@@ -103,6 +129,7 @@ export function TengaiPlayer({ rom, port }: Props) {
           const m = runner.m;
           const input = frameInput(keys);
           addGamepadInput(input);
+          touchRef.current.addTo(input);
           m.p1 = input.player;
           m.coin1 = input.coin;
           // 원작은 VBLANK까지의 공회전 횟수를 난수에 섞는다. 실기처럼 매 프레임 조금씩 다르게 준다
@@ -138,16 +165,18 @@ export function TengaiPlayer({ rom, port }: Props) {
     raf = requestAnimationFrame(tick);
 
     // 다른 창으로 가면 자동 일시정지
-    const onBlur = () => {
-      pausedRef.current = true;
-      setPaused(true);
-    };
+    const onBlur = () => changePaused(true);
+    const onVisibility = () => { if (document.hidden) changePaused(true); };
     window.addEventListener('blur', onBlur);
+    document.addEventListener('visibilitychange', onVisibility);
 
     return () => {
       cancelAnimationFrame(raf);
       stop();
+      keysRef.current = null;
+      touchRef.current.clear();
       window.removeEventListener('blur', onBlur);
+      document.removeEventListener('visibilitychange', onVisibility);
       window.removeEventListener('keydown', unlock);
       window.removeEventListener('pointerdown', unlock);
       window.removeEventListener('keydown', onKeyM);
@@ -157,26 +186,32 @@ export function TengaiPlayer({ rom, port }: Props) {
 
   return (
     <div className="tengai-player">
-      <div className="tengai-screen" ref={screenRef} onDoubleClick={() => toggleFullscreen(screenRef.current)}>
-        <canvas ref={canvasRef} className="tengai-pixel tengai-canvas" />
-        {paused && !error && (
-          <button
-            type="button"
-            className="tengai-overlay"
-            onClick={() => {
-              pausedRef.current = false;
-              setPaused(false);
-            }}
-          >
-            일시정지 · 클릭하거나 P를 누르면 계속
+      <div className={`tengai-stage${expanded ? ' tengai-expanded' : ''}`} ref={stageRef}>
+        <div className="tengai-screen" onDoubleClick={toggleScreen}>
+          <canvas ref={canvasRef} className="tengai-pixel tengai-canvas" />
+          {paused && !error && (
+            <button
+              type="button"
+              className="tengai-overlay"
+              onClick={() => changePaused(false)}
+            >
+              일시정지 · 눌러서 계속하기
+            </button>
+          )}
+          {error && <div className="tengai-overlay tengai-error">{error}</div>}
+        </div>
+        <div className="tengai-player-toolbar">
+          <button type="button" onClick={() => changePaused(!pausedRef.current)} disabled={!!error}>
+            {paused ? '계속하기' : '일시정지'}
           </button>
-        )}
-        {error && <div className="tengai-overlay tengai-error">{error}</div>}
+          <button type="button" onClick={toggleScreen}>{expanded ? '화면 줄이기' : '전체 화면'}</button>
+          <MuteButton />
+          <span className="tengai-fps">{fps} fps</span>
+        </div>
+        <TouchControls input={touchRef.current} disabled={paused || !!error} />
       </div>
-      <p className="tengai-note">
+      <p className="tengai-note tengai-keyboard-note">
         코인 <kbd>5</kbd>/<kbd>Shift</kbd> · 시작 <kbd>Enter</kbd> · 이동 방향키/WASD · 샷 <kbd>Z</kbd>(누르고 있으면 모아쏘기) · 폭탄 <kbd>X</kbd> · 일시정지 <kbd>P</kbd> · 소리 <kbd>M</kbd> · 전체 화면 <kbd>F</kbd> · 게임패드 지원
-        <span className="tengai-fps">{fps} fps</span>
-        <MuteButton />
       </p>
     </div>
   );

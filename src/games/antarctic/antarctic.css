@@ -1,0 +1,75 @@
+.antarctic-page { --polar: #9fe5df; padding-top: 12px; }
+.antarctic-heading { width: min(800px, 100%); display: flex; justify-content: space-between; align-items: center; margin: 8px 0 24px; }
+.antarctic-eyebrow { font: 10px/1.5 'Courier New', monospace; letter-spacing: 2.5px; color: #9fe5df; margin: 0 0 9px; font-weight: bold; }
+.antarctic-heading h1 { margin: 0; letter-spacing: -.04em; font-size: 32px; }
+.antarctic-heading h1 span { font: 11px 'Courier New', monospace; letter-spacing: 3px; color: #6e8c9c; margin-left: 12px; vertical-align: middle; }
+.antarctic-edition { border: 1px solid #2b4554; border-radius: 4px; padding: 7px 9px; font: 10px monospace; color: #8aa7b5; letter-spacing: 1px; }
+.antarctic-board { overflow: hidden; border: 1px solid #365263; border-radius: 12px; box-shadow: 0 18px 70px #0005; }
+.antarctic-hud { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 24px; background: #122635; }
+.antarctic-hud > div:not(.antarctic-tools) { display: flex; flex-direction: column; gap: 5px; }
+.antarctic-hud span { font-size: 10px; color: #92adbb; letter-spacing: 1px; }
+.antarctic-hud strong { font: bold 23px 'Courier New', monospace; color: #f1fafa; letter-spacing: 1px; }
+.antarctic-hud small { font: 11px system-ui; color: #9db8c5; }
+.antarctic-hud .antarctic-hearts { color: #ed91a0; letter-spacing: 4px; }
+.antarctic-hearts i { color: #567080; font-style: normal; }
+.antarctic-hud .antarctic-urgent strong { color: #ff8c8c; }
+.antarctic-tools { display: flex; gap: 9px; }
+.antarctic-tools button { width: 29px; height: 30px; padding: 0; border: 0; border-radius: 5px; background: #253d4d; color: #b8d5df; font-size: 17px; cursor: pointer; }
+.antarctic-tools button:disabled { opacity: .35; cursor: default; }
+.game-canvas.antarctic-canvas { aspect-ratio: 20 / 13; border-radius: 0; cursor: pointer; touch-action: none; }
+.antarctic-overlay { position: absolute; inset: 0; display: grid; place-items: center; background: #16354b32; padding: 20px; }
+.antarctic-dialog { width: min(360px, 100%); text-align: center; padding: 29px 27px 22px; background: #102c3df2; border: 1px solid #7296a5; border-radius: 10px; box-shadow: 0 12px 0 #16344720, 0 20px 50px #10334a30; }
+.antarctic-dialog h2 { margin: 10px 0 13px; font-size: 27px; letter-spacing: -1px; color: #f3fafb; }
+.antarctic-dialog > p:not(.antarctic-eyebrow) { margin: 0; font-size: 13px; color: #bbced8; line-height: 1.9; }
+.antarctic-dialog b { color: #ffe3a6; }
+.antarctic-instructions { display: flex; justify-content: center; gap: 20px; margin-top: 20px; font-size: 12px; color: #c0d5dc; }
+.antarctic-instructions kbd { background: #203f50; border-color: #5b7989; padding: 3px 6px; font-size: 10px; }
+.antarctic-start { width: 100%; display: flex; justify-content: space-between; padding: 12px 16px; margin: 23px 0 12px; border: 0; border-radius: 5px; background: #a6e8da; color: #153c43; font: bold 14px system-ui; cursor: pointer; }
+.antarctic-start:hover { background: #c1f8e9; }
+.antarctic-dialog > small { font: 9px monospace; color: #8caab7; letter-spacing: 1px; }
+.antarctic-record { display: block; margin-top: 14px; font: 11px monospace; color: #a6e8da; }
+.antarctic-route { position: relative; padding: 22px 24px 16px; background: #122635; }
+.antarctic-route-track { height: 3px; background: #304958; border-radius: 3px; overflow: hidden; }
+.antarctic-route-track > span { display: block; height: 100%; background: #a6e8da; transition: width .15s linear; }
+.antarctic-route ol { display: flex; justify-content: space-between; list-style: none; padding: 0; margin: 12px 0 0; }
+.antarctic-route li { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #6e8b9c; }
+.antarctic-route li span { font: 10px monospace; }
+.antarctic-route li.current { color: #b8f1e4; }
+.antarctic-route li.complete { color: #cee4e9; }
+.antarctic-bottom { width: min(800px, 100%); display: flex; justify-content: space-between; margin: 4px 0 12px; color: #839fae; font-size: 11px; }
+.antarctic-bottom b { font-weight: normal; color: #c6d8df; }
+.antarctic-bottom span { margin: 0 10px; color: #3f5c6b; }
+.antarctic-controls { display: flex; gap: 10px; width: min(400px, 100%); }
+.antarctic-controls button { flex: 1; min-height: 46px; border: 1px solid #365263; border-bottom-width: 3px; border-radius: 8px; background: #142b3b; color: #c9e1e8; font-size: 22px; cursor: pointer; touch-action: none; user-select: none; }
+.antarctic-controls button:active { background: #294c5c; transform: translateY(1px); }
+.antarctic-controls .antarctic-jump { flex: 2; color: #b4e9db; font: bold 13px system-ui; }
+.antarctic-jump span { margin-left: 22px; }
+.antarctic-help { font-size: 11px; text-align: center; line-height: 1.8; }
+.antarctic-page button:focus-visible { outline: 2px solid #f7dca0; outline-offset: 3px; }
+@media (max-width: 560px) {
+  .antarctic-heading { margin-bottom: 16px; }
+  .antarctic-heading h1 { font-size: 27px; }
+  .antarctic-heading h1 span, .antarctic-edition { display: none; }
+  .antarctic-hud { gap: 8px; padding: 12px 10px; flex-wrap: wrap; }
+  .antarctic-hud strong { font-size: 17px; }
+  .antarctic-hud span { font-size: 9px; }
+  .antarctic-hud .antarctic-hearts { letter-spacing: 0; }
+  .antarctic-tools { gap: 5px; }
+  .antarctic-tools button { width: 24px; height: 27px; font-size: 14px; }
+  .game-canvas.antarctic-canvas { aspect-ratio: 20 / 19; }
+  .antarctic-overlay { padding: 12px; }
+  .antarctic-dialog { padding: 20px 18px 16px; }
+  .antarctic-dialog h2 { font-size: 24px; }
+  .antarctic-route { padding: 17px 12px 14px; }
+  .antarctic-route li { font-size: 10px; gap: 4px; }
+  .antarctic-bottom { font-size: 10px; }
+  .antarctic-bottom span { margin: 0 4px; }
+}
+@media (max-width: 360px) {
+  .antarctic-dialog { padding: 12px 14px; }
+  .antarctic-dialog h2 { font-size: 21px; margin: 8px 0; }
+  .antarctic-dialog .antarctic-eyebrow { font-size: 8px; letter-spacing: 1px; }
+  .antarctic-dialog > p:not(.antarctic-eyebrow) { font-size: 12px; }
+  .antarctic-instructions { margin-top: 12px; }
+  .antarctic-start { margin: 14px 0 8px; padding: 10px 12px; }
+}

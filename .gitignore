@@ -1,0 +1,7 @@
+node_modules
+dist
+*.local
+.idea/workspace.xml
+public/tengai-assets/
+src/games/tengai/port/generated/
+.idea/claudeCodeTabState.xml

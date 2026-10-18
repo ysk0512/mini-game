@@ -1,0 +1,132 @@
+.marble-page { --marble-accent: #71b6a1; max-width: 1080px; padding-top: 10px; }
+.marble-heading { width: 100%; display: flex; justify-content: space-between; align-items: center; margin: 6px 0 25px; }
+.marble-eyebrow { color: #99bfae; font: 10px/1.5 'Courier New', monospace; font-weight: bold; letter-spacing: 2px; margin: 0 0 9px; }
+.marble-heading h1 { font-size: 34px; letter-spacing: -1.5px; margin: 0; }
+.marble-heading h1 > span { color: #779b91; font: 11px 'Courier New', monospace; letter-spacing: 3px; margin-left: 16px; vertical-align: middle; }
+.marble-subtitle { color: #8b9f9d; font-size: 12px; margin: 9px 0 0; }
+.marble-best { text-align: right; display: flex; flex-direction: column; gap: 8px; }
+.marble-best > span { color: #78978f; font: 9px monospace; letter-spacing: 1.5px; }
+.marble-best strong { color: #d8e9df; font: 23px monospace; }
+.marble-best small { font-size: 10px; color: #7a978d; }
+.marble-shell { width: 100%; border: 1px solid #3a5149; border-radius: 14px; overflow: hidden; box-shadow: 0 20px 70px #0004; }
+.marble-hud { display: flex; gap: 28px; align-items: center; padding: 17px 24px; background: #172b2a; }
+.marble-hud > div:not(.marble-toolbar) { display: flex; flex-direction: column; gap: 5px; }
+.marble-hud span { color: #9aafa6; font-size: 10px; }
+.marble-hud strong { color: #e9eee2; font: 21px 'Courier New', monospace; font-weight: bold; }
+.marble-hud strong small { color: #92aa9f; font-size: 12px; }
+.marble-hud > .marble-course-label { flex-direction: row !important; align-items: center; gap: 12px !important; margin-right: auto; }
+.marble-course-label > div { display: flex; flex-direction: column; gap: 4px; }
+.marble-course-label strong { font: bold 14px system-ui; }
+.marble-course-label .marble-number { display: grid; place-items: center; width: 38px; height: 38px; border: 1px solid #4e6d5e; border-radius: 9px; color: #afd1bb; font: 18px monospace; }
+.marble-hud .marble-gems { color: #e8c480; }
+.marble-toolbar { display: flex; align-items: center; gap: 7px; margin-left: 3px; }
+.marble-toolbar button { width: 30px; height: 30px; border: 1px solid #3c554a; border-radius: 6px; color: #c6d6c8; background: #223d35; padding: 0; font-size: 19px; cursor: pointer; }
+.marble-toolbar button:disabled { opacity: .35; cursor: default; }
+.marble-stage { width: 100%; height: clamp(440px, 58vw, 620px); position: relative; background: #dce9e3; touch-action: none; }
+.marble-stage > div:first-child { position: absolute !important; inset: 0; }
+.marble-stage canvas { display: block; }
+.marble-scene-label { position: absolute; top: 26px; left: 26px; pointer-events: none; display: flex; flex-direction: column; gap: 7px; }
+.marble-scene-label span { color: #788e85; font: 8px monospace; letter-spacing: 2px; }
+.marble-scene-label strong { color: #536e63; font: 12px monospace; letter-spacing: 2px; }
+.marble-score { position: absolute; top: 26px; right: 26px; color: #788e85; font: 9px monospace; letter-spacing: 1px; pointer-events: none; }
+.marble-score strong { margin-left: 7px; color: #536e63; font-size: 14px; }
+.marble-in-scene-help { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); color: #657e71; font-size: 10px; display: flex; align-items: center; gap: 9px; white-space: nowrap; pointer-events: none; }
+.marble-ball-dot { width: 9px; height: 9px; border-radius: 50%; background: #e49b98; border: 1px solid #d28c88; }
+.marble-camera { display: none; position: absolute; right: 14px; bottom: 46px; padding: 7px 10px; border: 1px solid #b6c9b9; border-radius: 5px; background: #f5f7ecee; color: #5a7563; font: 10px system-ui; cursor: pointer; }
+.marble-notice { position: absolute; bottom: 52px; left: 50%; transform: translateX(-50%); max-width: 90%; width: max-content; background: #264a3ded; border-radius: 30px; padding: 11px 18px; color: #e3eee0; font-size: 12px; text-align: center; pointer-events: none; box-shadow: 0 4px 20px #15382722; }
+.marble-overlay { position: absolute; inset: 0; background: #dae6da30; display: grid; place-items: center; padding: 18px; }
+.marble-dialog { width: min(384px, 100%); padding: 28px 30px 23px; border: 1px solid #ffffffc9; border-radius: 17px; background: #f9faf3f5; color: #2f4d3f; box-shadow: 0 15px 60px #284f3e22, 0 2px 8px #284f3e11; text-align: center; }
+.marble-dialog .marble-eyebrow { color: #7d9684; font-size: 9px; letter-spacing: 1.5px; }
+.marble-dialog h2 { font-size: 25px; letter-spacing: -1.1px; margin: 16px 0 12px; }
+.marble-dialog p:not(.marble-eyebrow) { color: #718272; font-size: 12px; line-height: 1.9; margin: 0; }
+.marble-orb { width: 51px; height: 51px; border-radius: 50%; background: radial-gradient(circle at 30% 24%, #ffe2ce 1%, #e9a29b 29%, #ca747a 80%); position: relative; box-shadow: 0 12px 12px -9px #a7807490; margin: 18px auto 0; transform: rotate(-28deg); overflow: hidden; }
+.marble-orb::after { content: ''; position: absolute; inset: 0 20px; border-left: 4px solid #fff1d4c9; border-right: 2px solid #fff1d499; }
+.marble-instructions { display: flex; justify-content: center; flex-wrap: wrap; gap: 7px 12px; margin: 18px -10px 0; color: #768673; font-size: 10px; }
+.marble-instructions kbd { background: #e8ede1; border-color: #bdc9b7; color: #53684e; font-size: 9px; padding: 3px 4px; }
+.marble-primary { display: flex; justify-content: space-between; align-items: center; width: 100%; border: 0; border-radius: 8px; margin: 24px 0 12px; padding: 13px 17px; color: #f5f5e9; background: #456e59; font: bold 13px system-ui; cursor: pointer; }
+.marble-primary:hover { background: #365c48; }
+.marble-primary:disabled { opacity: .5; cursor: wait; }
+.marble-dialog > small { font-size: 9px; color: #9aa38e; }
+.marble-secondary { border: 0; background: none; padding: 3px; font: 11px system-ui; color: #7d8c76; text-decoration: underline; cursor: pointer; }
+.marble-stars { color: #dcaf54; font-size: 36px; margin-top: 15px; letter-spacing: 6px; }
+.marble-stars span { color: #c9cfba; }
+.marble-result { display: flex; justify-content: space-between; border-top: 1px solid #dee5d7; border-bottom: 1px solid #dee5d7; padding: 15px 0; margin: 18px 0; gap: 10px; }
+.marble-result > div { display: flex; flex-direction: column; gap: 7px; }
+.marble-result span { font-size: 10px; color: #89977f; }
+.marble-result b { font: bold 18px monospace; color: #56734f; }
+.marble-statusbar { display: flex; justify-content: space-between; gap: 12px; padding: 13px 24px; background: #172b2a; color: #9bac9d; font-size: 10px; }
+.marble-statusbar i { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #9fc4a2; margin-right: 7px; }
+.marble-statusbar b { margin: 0 12px; color: #5c7a67; }
+.marble-underboard { display: flex; justify-content: space-between; align-items: center; gap: 20px; width: 100%; padding: 24px 0 20px; }
+.marble-tip > span { font-size: 10px; color: #b2c9b0; }
+.marble-tip p { color: #93a99e; font-size: 12px; margin: 8px 0 12px; line-height: 1.6; }
+.marble-tip small { color: #647e74; font-size: 10px; line-height: 1.8; }
+.marble-touch { display: flex; gap: 18px; align-items: center; flex-shrink: 0; }
+.marble-dpad { display: grid; grid-template-columns: repeat(3, 32px); grid-template-rows: repeat(3, 28px); gap: 3px; }
+.marble-touch button { color: #adc8b6; background: #192e29; border: 1px solid #3d5549; border-radius: 5px; font-size: 17px; cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none; }
+.marble-touch button:active { background: #395345; }
+.marble-pad-up { grid-area: 1 / 2; }.marble-pad-left { grid-area: 2 / 1; }.marble-pad-brake { grid-area: 2 / 2; }.marble-pad-right { grid-area: 2 / 3; }.marble-pad-down { grid-area: 3 / 2; }
+.marble-touch .marble-pad-brake { color: #d2c5a1; font-size: 12px; }
+.marble-touch .marble-jump { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; width: 56px; height: 56px; border-radius: 50%; font-size: 25px; }
+.marble-jump span { font-size: 9px; }
+.marble-courses { width: 100%; padding: 19px 0 25px; border-top: 1px solid #1e3630; }
+.marble-course-heading { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.marble-course-heading h2 { color: #afc2b3; font-size: 13px; margin: 0; font-weight: 500; }
+.marble-course-heading > span { font-size: 10px; color: #617e70; }
+.marble-course-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.marble-course-card { display: flex; align-items: center; gap: 13px; padding: 17px 16px; background: #102520; border: 1px solid #273f32; border-radius: 9px; color: #c8d9c8; font: inherit; text-align: left; cursor: pointer; transition: background .15s, border-color .15s; }
+.marble-course-card:hover { background: #1b352b; border-color: var(--course-color); }
+.marble-course-card.selected { background: #1d352b; border-color: var(--course-color); }
+.marble-course-icon { font-size: 31px; line-height: 1; color: var(--course-color); }
+.marble-course-text { display: flex; flex-direction: column; gap: 5px; }
+.marble-course-text small { font: 8px monospace; letter-spacing: 1px; color: #7d9b88; }
+.marble-course-text strong { font-size: 13px; }
+.marble-course-text > span { font-size: 10px; color: #7d9585; }
+.marble-course-record { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; margin-left: auto; color: #ccba83; font-size: 11px; white-space: nowrap; }
+.marble-course-record small { font: 9px monospace; color: #8e9c7f; }
+.marble-page button:focus-visible { outline: 2px solid #e4c38d; outline-offset: 3px; }
+.marble-unavailable { display: grid; place-content: center; text-align: center; padding: 24px; color: #405c4b; z-index: 5; background: #e5ebdf; }
+.marble-unavailable h2 { font-size: 21px; }.marble-unavailable p { font-size: 13px; }
+@media (max-width: 760px) {
+  .marble-hud { padding: 13px 15px; gap: 15px; }
+  .marble-hud .marble-falls { display: none !important; }
+  .marble-course-grid { grid-template-columns: 1fr; gap: 8px; }
+  .marble-course-card { padding: 13px 16px; }
+  .marble-underboard { align-items: flex-start; }
+  .marble-scene-label { left: 18px; top: 19px; }
+  .marble-score { top: 19px; right: 18px; }
+}
+@media (max-width: 520px) {
+  .marble-heading { margin-bottom: 19px; }
+  .marble-heading h1 { font-size: 28px; }.marble-heading h1 > span { display: none; }
+  .marble-heading .marble-eyebrow { font-size: 8px; letter-spacing: 1.2px; }
+  .marble-best strong { font-size: 20px; }.marble-best > span { font-size: 8px; letter-spacing: .5px; }
+  .marble-hud { padding: 11px 10px; gap: 12px; flex-wrap: wrap; }
+  .marble-course-label .marble-number { display: none; }.marble-course-label strong { font-size: 12px; }
+  .marble-hud strong { font-size: 17px; }.marble-hud strong small { font-size: 10px; }.marble-hud span { font-size: 9px; }
+  .marble-toolbar { gap: 4px; margin-left: auto; }.marble-toolbar button { width: 25px; height: 27px; font-size: 16px; }
+  .marble-stage { height: 420px; }
+  .marble-scene-label strong { font-size: 9px; letter-spacing: 1px; }.marble-scene-label span { font-size: 6px; letter-spacing: 1px; }
+  .marble-score { font-size: 7px; }.marble-score strong { font-size: 11px; }
+  .marble-dialog { padding: 22px 20px 19px; }.marble-dialog h2 { font-size: 22px; }
+  .marble-statusbar { padding: 12px; gap: 6px; font-size: 9px; }.marble-target { display: none; }
+  .marble-statusbar b { margin: 0 6px; }
+  .marble-underboard { flex-direction: column-reverse; align-items: stretch; gap: 17px; padding: 17px 0; }
+  .marble-touch { width: 100%; justify-content: space-between; padding: 0 24px; }
+  .marble-dpad { grid-template-columns: repeat(3, 42px); grid-template-rows: repeat(3, 34px); gap: 4px; }
+  .marble-touch .marble-jump { width: 65px; height: 65px; }
+  .marble-tip p { margin: 5px 0 8px; }.marble-tip small { font-size: 9px; }
+  .marble-in-scene-help { font-size: 9px; gap: 5px; }
+}
+@media (max-width: 640px) { .marble-camera { display: block; } }
+@media (max-width: 360px) {
+  .marble-overlay { padding: 10px; }
+  .marble-dialog { padding: 16px 14px; }
+  .marble-dialog h2 { font-size: 20px; margin: 12px 0 10px; }
+  .marble-dialog .marble-eyebrow { font-size: 8px; letter-spacing: .7px; }
+  .marble-dialog p:not(.marble-eyebrow) { font-size: 11px; }
+  .marble-orb { width: 38px; height: 38px; margin-top: 12px; }
+  .marble-orb::after { inset: 0 14px; }
+  .marble-instructions { margin-top: 14px; gap: 7px; }
+  .marble-primary { margin-top: 18px; }
+}

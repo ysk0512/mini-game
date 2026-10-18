@@ -5,3 +5,5 @@ dist
 public/tengai-assets/
 src/games/tengai/port/generated/
 .idea/claudeCodeTabState.xml
+tengai-pack.zip
+*.tengai.zip

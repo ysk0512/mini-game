@@ -8,9 +8,8 @@ import AntarcticGame, { ANTARCTIC_HIGHSCORE_KEY } from './antarctic/AntarcticGam
 // three.js가 커서 카트 게임은 들어갈 때 불러온다
 const KartGame = lazy(() => import('./kart/KartGame'));
 const MarbleGame = lazy(() => import('./marble/MarbleGame'));
-// 원작 ROM 데이터가 필요해 개발 중에만 노출한다 (npm run tengai:extract).
-// 배포 빌드에는 코드 조각도 넣지 않도록 개발 모드에서만 import 한다
-const TengaiGame = import.meta.env.DEV ? lazy(() => import('./tengai/TengaiGame')) : null;
+// 원작 ROM 데이터가 필요해 숨겨 둔다 (홈 화면에서 비밀 키를 입력하면 보인다)
+const TengaiGame = lazy(() => import('./tengai/TengaiGame'));
 
 export interface GameInfo {
   id: string;
@@ -22,6 +21,8 @@ export interface GameInfo {
   highScoreKey?: string;
   /** 점수 대신 다른 기록을 보여 줄 때 (예: 레이스 타임) */
   bestText?: () => string;
+  /** 홈 화면에서 비밀 키를 입력해야 보이는 게임 */
+  hidden?: boolean;
   component: ComponentType;
 }
 
@@ -80,17 +81,14 @@ export const GAMES: GameInfo[] = [
     bestText: () => `베스트 ${recordSummary()}`,
     component: KartGame,
   },
-  ...(TengaiGame
-    ? [
-        {
-          id: 'tengai',
-          title: '텐가이 (개발 중)',
-          description: '원작 ROM으로 돌리는 횡스크롤 슈팅 이식판. 1스테이지부터 맞춰 가는 중입니다.',
-          icon: '⛩️',
-          accent: '#e0b25a',
-          bestText: () => '개발 중',
-          component: TengaiGame,
-        },
-      ]
-    : []),
+  {
+    id: 'tengai',
+    title: '텐가이',
+    description: '원작 ROM으로 돌리는 횡스크롤 슈팅 이식판. 데이터 파일이 있어야 플레이할 수 있습니다.',
+    icon: '⛩️',
+    accent: '#e0b25a',
+    bestText: () => '비밀 메뉴',
+    hidden: true,
+    component: TengaiGame,
+  },
 ];

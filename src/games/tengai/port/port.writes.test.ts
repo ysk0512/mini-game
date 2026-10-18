@@ -5,7 +5,7 @@
  * 출력 한 줄: "<함수<호출자> <주소> <값>" (바이트 단위, 스택 제외). tengai/tools/wldiff.py로 MAME 기록과 비교한다.
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { describe, it } from 'vitest';
 import { spriteLutFrom } from '../rom/parse';
 
@@ -53,6 +53,11 @@ describe.skipIf(!enabled)('쓰기 기록', () => {
       runner.idleSpins = ((n[0x2c001] << 24) | (n[0x2c002] << 16) | (n[0x2c003] << 8) | n[0x2c004]) >>> 0;
       extra = n[0x2c005];
       runner.m.setInputBytes(n[0x95bb], n[0x95bd], n[0x95c3]);
+    }
+    const manifestPath = join(dirname(DUMP), 'capture.json');
+    if (existsSync(manifestPath)) {
+      const capture = JSON.parse(readFileSync(manifestPath, 'utf8'));
+      for (const poke of capture.pokes ?? []) runner.m.w16(poke.address, poke.value);
     }
 
     const m = runner.m;

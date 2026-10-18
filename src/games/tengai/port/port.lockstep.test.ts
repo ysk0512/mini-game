@@ -64,6 +64,11 @@ describe.skipIf(!enabled)('MAME 대조', () => {
     expect(end, 'no subsequent dump steps were found').toBeGreaterThan(START);
     const manifestPath = join(DIR, 'capture.json');
     const capture = existsSync(manifestPath) ? JSON.parse(readFileSync(manifestPath, 'utf8')) : undefined;
+    const pokes: { address: number; value: number }[] = capture?.pokes ?? [];
+    for (const poke of pokes) {
+      expect(Number.isInteger(poke.address) && poke.address >= 0xfe0000 && poke.address < 0xffffff && poke.address % 2 === 0).toBe(true);
+      expect(Number.isInteger(poke.value) && poke.value >= 0 && poke.value <= 0xffff).toBe(true);
+    }
     if (OUT) mkdirSync(OUT, { recursive: true });
 
     const m = runner.m;
@@ -87,6 +92,7 @@ describe.skipIf(!enabled)('MAME 대조', () => {
       runner.idleSpins = r32(after, 0x2c001);
       // 이 처리를 시작시킨 인터럽트가 읽어 RAM에 남긴 입력 (0xFE95BB P1, 0xFE95BD P2, 0xFE95C3 코인 등)
       m.setInputBytes(after[0x95bb], after[0x95bd], after[0x95c3]);
+      for (const poke of pokes) m.w16(poke.address, poke.value);
       const extra = after[0x2c005];
       runner.step(extra);
       const c = k;
